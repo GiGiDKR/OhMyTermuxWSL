@@ -1,1 +1,3 @@
 # OhMyTermuxWSL
+
+Only dev branches for an ongoing project...
