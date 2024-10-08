@@ -238,7 +238,7 @@ fi
 
 execute_command "sudo apt update -y" "Recherche de mises à jour" 30
 execute_command "sudo apt upgrade -y" "Mise à jour des paquets"
-execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common" "Installation des dépendances" 90
+execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common" "Installation des dépendances" 160
 
 # Modification de l'ajout de la clé GPG Docker
 execute_command "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -" "Ajout de la clé GPG Docker" 10
@@ -250,10 +250,10 @@ execute_command "echo \"deb [arch=$(dpkg --print-architecture)] https://download
 execute_command "sudo apt update" "Mise à jour des dépôts" 30
 
 if is_wsl; then
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 90
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 120
     check_and_start_docker
 else
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 90
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 120
     execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
     check_and_start_docker
 fi
