@@ -264,12 +264,28 @@ fi
 # Rechargement des groupes de l'utilisateur
 newgrp docker
 
-# Lancement de Termux Docker
-info_msg "Lancement de Termux Docker..."
-docker run -it --rm termux/termux-docker /bin/bash
+# Détection du shell par défaut
+default_shell=$(basename "$SHELL")
+
+# Création de l'alias selon le shell par défaut
+case "$default_shell" in
+    bash)
+        config_file="$HOME/.bashrc"
+        ;;
+    zsh)
+        config_file="$HOME/.zshrc"
+        ;;
+    *)
+        error_msg "Shell non pris en charge : $default_shell"
+        exit 1
+        ;;
+esac
+
+# Ajout de l'alias au fichier de configuration
+echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
 
 # Messages de fin
-success_msg "Termux Docker a été exécuté avec succès."
-info_msg "Si vous n'êtes plus dans l'environnement Termux, vous pouvez le relancer avec la commande :"
-info_msg "docker run -it --rm termux/termux-docker /bin/bash"
-info_msg "Installation terminée"
+success_msg "L'installation est terminée avec succès."
+info_msg "Un alias 'termux' a été ajouté à votre fichier $config_file"
+info_msg "Pour utiliser Termux Docker, redémarrez votre terminal ou exécutez 'source $config_file'"
+info_msg "Ensuite, vous pourrez lancer Termux Docker en tapant simplement 'termux' dans votre terminal."
