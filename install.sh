@@ -200,12 +200,20 @@ execute_command() {
     fi
 }
 
-# Vérification et démarrage du service Docker
+# Modification de la fonction check_and_start_docker
 check_and_start_docker() {
-    if ! sudo service docker status > /dev/null 2>&1; then
-        execute_command "sudo service docker start" "Démarrage du service Docker" 30
+    if is_wsl; then
+        if ! sudo service docker status > /dev/null 2>&1; then
+            execute_command "sudo service docker start" "Démarrage du service Docker" 30
+        else
+            info_msg "> Le service Docker est déjà en cours d'exécution"
+        fi
     else
-        info_msg "> Le service Docker est déjà en cours d'exécution"
+        if ! systemctl is-active --quiet docker; then
+            execute_command "sudo systemctl start docker" "Démarrage du service Docker" 30
+        else
+            info_msg "> Le service Docker est déjà en cours d'exécution"
+        fi
     fi
 }
 
@@ -247,22 +255,15 @@ if is_wsl; then
 else
     execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 300
     execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
-    execute_command "sudo systemctl start docker" "Démarrage du service Docker" 10
+    check_and_start_docker
 fi
 
 execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur $USER au groupe Docker" 10
 
-# Redémarrage du service Docker
-#if is_wsl; then
-#    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
-#else
-#    execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
-#fi
-
 #execute_command "sleep 10" "Pause de 10 secondes" 10
 
 # Rechargement des groupes de l'utilisateur
-newgrp docker
+# newgrp docker
 
 # Détection du shell par défaut
 default_shell=$(basename "$SHELL")
@@ -284,10 +285,25 @@ esac
 # Ajout de l'alias au fichier de configuration
 echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
 
-docker run -it --rm termux/termux-docker /bin/bash
-
 # Messages de fin
 success_msg "L'installation est terminée avec succès."
 info_msg "Un alias 'termux' a été ajouté à votre fichier $config_file"
-info_msg "Pour utiliser Termux Docker, redémarrez votre terminal ou exécutez 'source $config_file'"
-info_msg "Ensuite, vous pourrez lancer Termux Docker en tapant simplement 'termux' dans votre terminal."
+info_msg "Pour utiliser Termux Docker, vous devez recharger votre configuration de shell."
+
+# Ajout d'une pause pour l'utilisateur
+read -p "Appuyez sur Entrée pour recharger la configuration du shell..."
+
+# Rechargement de la configuration du shell
+source "$config_file"
+
+info_msg "La configuration a été rechargée. Vous pouvez maintenant utiliser la commande 'termux' pour lancer Termux Docker."
+
+# Redémarrage du service Docker
+if is_wsl; then
+    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
+else
+    execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
+fi
+
+# Ajout d'un message pour informer l'utilisateur de se déconnecter et se reconnecter
+info_msg "Pour que les changements prennent effet, veuillez vous déconnecter et vous reconnecter à votre session."
