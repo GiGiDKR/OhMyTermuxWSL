@@ -302,4 +302,4 @@ else
     execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
 fi
 
-info_msg "Utiliser la commande 'termux' pour lancer Termux Docker."
+info_msg "Utiliser la commande 'termux' pour lancer Termux Docker"
