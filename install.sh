@@ -253,11 +253,11 @@ fi
 execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur $USER au groupe Docker" 10
 
 # Redémarrage du service Docker
-if is_wsl; then
-    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
-else
-    execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
-fi
+#if is_wsl; then
+#    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
+#else
+#    execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
+#fi
 
 #execute_command "sleep 10" "Pause de 10 secondes" 10
 
@@ -283,6 +283,8 @@ esac
 
 # Ajout de l'alias au fichier de configuration
 echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
+
+alias termux='docker run -it --rm termux/termux-docker /bin/bash
 
 # Messages de fin
 success_msg "L'installation est terminée avec succès."
