@@ -237,7 +237,7 @@ if ! command -v lsb_release &> /dev/null; then
 fi
 
 execute_command "sudo apt update -y" "Recherche de mises à jour" 30
-execute_command "sudo apt upgrade -y" "Mise à jour des paquets"
+execute_command "sudo apt upgrade -y" "Mise à jour des paquets" 180
 execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common" "Installation des dépendances" 240
 
 # Modification de l'ajout de la clé GPG Docker
@@ -250,10 +250,10 @@ execute_command "echo \"deb [arch=$(dpkg --print-architecture)] https://download
 execute_command "sudo apt update" "Mise à jour des dépôts" 30
 
 if is_wsl; then
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 120
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 180
     check_and_start_docker
 else
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 120
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 180
     execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
     check_and_start_docker
 fi
