@@ -284,7 +284,7 @@ esac
 # Ajout de l'alias au fichier de configuration
 echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
 
-alias termux='docker run -it --rm termux/termux-docker /bin/bash
+docker run -it --rm termux/termux-docker /bin/bash
 
 # Messages de fin
 success_msg "L'installation est terminée avec succès."
