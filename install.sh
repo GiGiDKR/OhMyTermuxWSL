@@ -272,25 +272,9 @@ fi
 # Rechargement des groupes de l'utilisateur
 # newgrp docker
 
-# Détection du shell par défaut
-default_shell=$(basename "$SHELL")
-
-# Création de l'alias selon le shell par défaut
-case "$default_shell" in
-    bash)
-        config_file="$HOME/.bashrc"
-        ;;
-    zsh)
-        config_file="$HOME/.zshrc"
-        ;;
-    *)
-        error_msg "Shell non pris en charge : $default_shell"
-        exit 1
-        ;;
-esac
-
-# Ajout de l'alias au fichier de configuration
-echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
+# Lancement de Termux Docker
+info_msg "Lancement de Termux Docker..."
+docker run -it --rm termux/termux-docker /bin/bash
 
 # Messages de fin
 success_msg "L'installation est terminée avec succès."
