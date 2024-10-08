@@ -237,7 +237,7 @@ if ! command -v lsb_release &> /dev/null; then
 fi
 
 execute_command "sudo apt update -y" "Recherche de mises à jour" 20
-execute_command "sudo apt upgrade -y" "Mise à jour des paquets" 120
+execute_command "sudo apt upgrade -y" "Mise à jour des paquets"
 execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common" "Installation des dépendances"
 
 # Modification de l'ajout de la clé GPG Docker
@@ -250,10 +250,10 @@ execute_command "echo \"deb [arch=$(dpkg --print-architecture)] https://download
 execute_command "sudo apt update" "Mise à jour des dépôts" 20
 
 if is_wsl; then
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 300
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL"
     check_and_start_docker
 else
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 300
+    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker"
     execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
     check_and_start_docker
 fi
@@ -288,15 +288,12 @@ echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$co
 # Messages de fin
 success_msg "L'installation est terminée avec succès."
 info_msg "Un alias 'termux' a été ajouté à votre fichier $config_file"
-info_msg "Pour utiliser Termux Docker, vous devez recharger votre configuration de shell."
 
 # Ajout d'une pause pour l'utilisateur
 read -p "Appuyez sur Entrée pour recharger la configuration du shell..."
 
 # Rechargement de la configuration du shell
 source "$config_file"
-
-info_msg "La configuration a été rechargée. Vous pouvez maintenant utiliser la commande 'termux' pour lancer Termux Docker."
 
 # Redémarrage du service Docker
 if is_wsl; then
@@ -305,5 +302,4 @@ else
     execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
 fi
 
-# Ajout d'un message pour informer l'utilisateur de se déconnecter et se reconnecter
-info_msg "Pour que les changements prennent effet, veuillez vous déconnecter et vous reconnecter à votre session."
+info_msg "Utiliser la commande 'termux' pour lancer Termux Docker."
