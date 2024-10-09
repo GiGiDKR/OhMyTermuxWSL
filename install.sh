@@ -6,7 +6,6 @@ FULL_INSTALL=false
 UPDATE_OH_MY_ZSH=false
 VERBOSE=false
 LOG_FILE="$HOME/omtwsl.log"
-TIMEOUT_DURATION=60 # Timeout par défaut en secondes
 
 # --- Couleurs ---
 COLOR_BLUE="\e[38;5;33m"
@@ -27,7 +26,6 @@ log_message() {
         "INFO") color="$COLOR_BLUE"; symbol="ℹ" ;;
         "SUCCESS") color="$COLOR_GREEN"; symbol="✓" ;;
         "ERROR") color="$COLOR_RED"; symbol="✗" ;;
-        "TIMEOUT") color="$COLOR_YELLOW"; symbol="⏱" ;;
     esac
 
     echo -e "${color}${symbol} $message${COLOR_RESET}"
@@ -95,14 +93,10 @@ check_sudo_permissions() {
 execute_command() {
     local command="$1"
     local message="$2"
-    local timeout="${3:-$TIMEOUT_DURATION}"
 
     log_message "INFO" "$message..."
-    if timeout $timeout bash -c "$command" > /dev/null 2>&1; then
+    if bash -c "$command" > /dev/null 2>&1; then
         log_message "SUCCESS" "$message"
-    elif [ $? -eq 124 ]; then
-        log_message "TIMEOUT" "$message"
-        return 1
     else
         log_message "ERROR" "$message"
         return 1
@@ -116,13 +110,13 @@ is_wsl() {
 check_and_start_docker() {
     if is_wsl; then
         if ! sudo service docker status > /dev/null 2>&1; then
-            execute_command "sudo service docker start" "Démarrage du service Docker" 30
+            execute_command "sudo service docker start" "Démarrage du service Docker"
         else
             log_message "INFO" "Le service Docker est déjà en cours d'exécution."
         fi
     else
         if ! systemctl is-active --quiet docker; then
-            execute_command "sudo systemctl start docker" "Démarrage du service Docker" 30
+            execute_command "sudo systemctl start docker" "Démarrage du service Docker"
         else
             log_message "INFO" "Le service Docker est déjà en cours d'exécution."
         fi
@@ -185,24 +179,24 @@ main() {
     check_sudo_permissions
     show_banner
 
-    execute_command "sudo apt update -y" "Mise à jour des paquets" 30
-    execute_command "sudo apt upgrade -y" "Mise à niveau des paquets" 180
-    execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances" 240
+    execute_command "sudo apt update -y" "Mise à jour des paquets"
+    execute_command "sudo apt upgrade -y" "Mise à niveau des paquets"
+    execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances"
 
-    execute_command "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg" "Ajout de la clé GPG Docker" 10
-    execute_command "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null" "Ajout du dépôt Docker" 10
-    execute_command "sudo apt update" "Mise à jour des dépôts" 30
+    execute_command "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg" "Ajout de la clé GPG Docker"
+    execute_command "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null" "Ajout du dépôt Docker"
+    execute_command "sudo apt update" "Mise à jour des dépôts"
 
     if is_wsl; then
-        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 180
+        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL"
     else
-        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 180
-        execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
+        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker"
+        execute_command "sudo systemctl enable docker" "Activation du service Docker"
     fi
 
     check_and_start_docker
-    execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe Docker" 10
-    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
+    execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe Docker"
+    execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
     shell_config=$(add_termux_alias)
 
