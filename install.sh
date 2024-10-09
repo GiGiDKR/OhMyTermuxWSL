@@ -218,12 +218,6 @@ download_termux_image() {
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --full|-f)
-                FULL_INSTALL=true
-                ;;
-            --update-omz|-u)
-                UPDATE_OH_MY_ZSH=true
-                ;;
             --verbose|-v)
                 VERBOSE=true
                 ;;
@@ -275,9 +269,15 @@ main() {
     # Ajout de l'alias Termux au fichier de configuration du shell
     add_termux_alias
 
-    echo -e "${COLOR_BLUE}⏭ Installation terminée !${COLOR_RESET}"
-    info_msg "Pour exécuter Termux Docker, saisissez : termux"
-    read -r -p "Appuyez sur n'importe quelle touche pour redémarrer..."
+    # Message de fin
+    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}⏭  Installation terminée !${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
+    info_msg "Pour exécuter Termux, saisir : ${COLOR_GREEN}termux${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}Appuyez sur n'importe quelle touche pour redémarrer...${COLOR_RESET}"
+    read -r -n 1 -s
+    clear
     exec $SHELL -l
 }
 
