@@ -114,10 +114,10 @@ show_banner() {
 
 # Fonction pour exécuter une commande et afficher le résultat
 execute_command() {
-    local command="$1"
-    local info_msg="$2"
-    local success_msg="$2"
-    local error_msg="$2"
+    local command=" $1"
+    local info_msg=" $2"
+    local success_msg=" $2"
+    local error_msg=" $2"
 
     if $USE_GUM; then
         if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "redirect_output $command"; then
@@ -298,7 +298,6 @@ main() {
         info_msg "Les modifications ont été appliquées à $shell_config."
         info_msg "Pour qu'elles prennent effet, redémarrez le terminal ou exécutez :"
         info_msg "source $shell_config"
-
     else
         error_msg "Fichier de configuration du shell non trouvé ou inaccessible."
     fi
