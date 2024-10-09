@@ -15,13 +15,23 @@ COLOR_GREEN="\e[38;5;82m"
 COLOR_YELLOW="\e[38;5;208m"
 COLOR_RESET="\e[0m"
 
+# --- Redirection ---
+if [ "$VERBOSE" = false ]; then
+    redirect="> /dev/null 2>&1"
+else
+    redirect=""
+fi
+
 # --- Fonctions ---
 
 # Affiche un message d'information
 info_msg() {
-    local message="$1"
-    echo -e "${COLOR_BLUE}$message${COLOR_RESET}"
-    install_log "$message"
+    local message="ⓘ $1"
+    if $USE_GUM; then
+        gum style "$message" --foreground 33
+    else
+        echo -e "\e[38;5;33m$message\e[0m"
+    fi
 }
 
 # Affiche un message de succès
@@ -93,9 +103,9 @@ show_banner() {
         # Afficher le banner en mode texte
         echo -e "\e[38;5;33m
 ╔══════════════════════════════════╗
-║                                     ║
-║             OHMYTERMUXWSL           ║
-║                                     ║
+║                                  ║
+║           OHMYTERMUXWSL          ║
+║                                  ║
 ╚══════════════════════════════════╝\e[0m"
     fi
 }
@@ -108,17 +118,34 @@ check_sudo_permissions() {
     fi
 }
 
-# Exécute une commande et affiche le résultat
+# Fonction pour exécuter une commande et afficher le résultat
 execute_command() {
     local command="$1"
-    local message="$2"
+    local info_msg="ⓘ $2"
+    local success_msg="✓ $2"
+    local error_msg="✗ $2"
 
-    info_msg "$message..."
-    if bash -c "$command" > /dev/null 2>&1; then
-        success_msg "$message"
+    if $USE_GUM; then
+        if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "$command $redirect"; then
+            gum style "$success_msg" --foreground 82
+        else
+            gum style "$error_msg" --foreground 196
+            log_error "$command"
+            return 1
+        fi
     else
-        error_msg "$message"
-        return 1
+        info_msg "$2"
+        if eval "$command $redirect"; then
+            tput cuu1
+            tput el
+            success_msg "$success_msg"
+        else
+            tput cuu1
+            tput el
+            error_msg "$error_msg"
+            log_error "$command"
+            return 1
+        fi
     fi
 }
 
@@ -231,12 +258,15 @@ main() {
     success_msg "Installation terminée avec succès."
     info_msg "L'alias 'termux' a été ajouté à votre configuration shell."
 
-    if [ -n "$shell_config" ]; then
+    if [ -n "$shell_config" ] && [ -f "$shell_config" ]; then
         info_msg "Application des modifications..."
-        eval "source $shell_config"
-        success_msg "Les modifications ont été appliquées. Vous pouvez maintenant utiliser la commande 'termux'."
+        if source "$shell_config" 2>/dev/null; then
+            success_msg "Les modifications ont été appliquées. Vous pouvez maintenant utiliser la commande 'termux'."
+        else
+            error_msg "Impossible d'appliquer les modifications. Veuillez redémarrer votre terminal."
+        fi
     else
-        error_msg "Impossible d'appliquer les modifications. Veuillez redémarrer votre terminal."
+        error_msg "Fichier de configuration du shell non trouvé ou inaccessible."
     fi
 }
 
