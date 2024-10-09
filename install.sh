@@ -286,7 +286,7 @@ main() {
     # Installation de Docker
     execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script Docker"
     execute_command "sudo sh get-docker.sh" "Installation de Docker"
-    execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe docker"
+    execute_command "sudo usermod -aG docker $USER" "Attribution des droits nécessaires"
 
     # Configuration de Docker
     #check_and_start_docker
@@ -301,14 +301,9 @@ main() {
     # Ajout de l'alias Termux au fichier de configuration du shell
     shell_config=$(add_termux_alias)
 
-    # Modifie la partie finale
-    if [ -n "$shell_config" ] && [ -f "$shell_config" ]; then
-        info_msg "Les modifications ont été appliquées à $shell_config."
-        info_msg "Pour qu'elles prennent effet, redémarrez le terminal ou exécutez :"
-        info_msg "source $shell_config"
-    else
-        error_msg "Fichier de configuration du shell non trouvé ou inaccessible."
-    fi
+    info_msg "Les modifications ont été appliquées à $shell_config."
+    info_msg "Pour qu'elles prennent effet, redémarrez le terminal ou exécutez :"
+    info_msg "source $shell_config"
 }
 
 # Appel de la fonction principale
