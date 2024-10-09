@@ -32,7 +32,7 @@ info_msg() {
     if $USE_GUM; then
         gum style "$message" --foreground 33
     else
-        echo -e "\e[38;5;33m$message\e[0m"
+        echo -e "${COLOR_BLUE}$message${COLOR_RESET}"
     fi
 }
 
@@ -124,7 +124,7 @@ execute_command() {
             gum style "$success_msg" --foreground 82
         else
             gum style "$error_msg" --foreground 196
-            log_error "$command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     else
@@ -137,7 +137,7 @@ execute_command() {
             tput cuu1
             tput el
             error_msg "$error_msg"
-            log_error "$command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     fi
@@ -149,23 +149,6 @@ is_wsl() {
         return 0
     else
         return 1
-    fi
-}
-
-# Vérifie et démarre Docker
-check_and_start_docker() {
-    if is_wsl; then
-        if ! sudo service docker status > /dev/null 2>&1; then
-            execute_command "sudo service docker start" "Démarrage du service Docker" 30
-        else
-            info_msg "Le service Docker est déjà en cours d'exécution."
-        fi
-    else
-        if ! systemctl is-active --quiet docker; then
-            execute_command "sudo systemctl start docker" "Démarrage du service Docker" 30
-        else
-            info_msg "Le service Docker est déjà en cours d'exécution."
-        fi
     fi
 }
 
@@ -206,9 +189,6 @@ alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
 
     if ! grep -q "# Common aliases" "$shell_config"; then
         echo -e "\n$common_aliases" >> "$shell_config"
-        success_msg "Alias communs ajoutés à $shell_config"
-    else
-        info_msg "Les alias communs existent déjà dans $shell_config"
     fi
 }
 
@@ -226,10 +206,6 @@ add_termux_alias() {
 
     if ! grep -q "alias termux=" "$shell_config"; then
         echo "alias termux='sudo docker run -it --rm termux/termux-docker /bin/bash'" >> "$shell_config"
-        success_msg "Alias 'termux' ajouté à $shell_config"
-        info_msg "Pour lancer Termux Docker, saisissez : termux"
-    else
-        info_msg "L'alias 'termux' existe déjà dans $shell_config"
     fi
 }
 
@@ -271,11 +247,11 @@ main() {
     # Vérification de gum
     check_gum
 
-    # Affichage du banner
-    show_banner
-
     # Vérification des droits root
     sudo -v
+
+    # Affichage du banner
+    show_banner
 
     # Installation des dépendances
     execute_command "sudo apt update -y" "Mise à jour des paquets"
@@ -288,31 +264,21 @@ main() {
     execute_command "sudo usermod -aG docker $USER" "Attribution des droits nécessaires"
 
     # Configuration de Docker
-    #check_and_start_docker
     execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
     # Téléchargement de l'image Termux
     download_termux_image
 
     # Ajout des alias communs
-    shell_config=$(add_common_alias)
+    add_common_alias
 
     # Ajout de l'alias Termux au fichier de configuration du shell
-    shell_config=$(add_termux_alias)
+    add_termux_alias
 
-    info_msg "Modifications appliquées !"
-    info_msg "Redémarrez le terminal ou exécutez :"
-    info_msg "source $shell_config"
-    echo
-    read -r -p "Redémarrer maintenant ? [o/N] " response
-    case "$response" in
-        [oO][uUiI]*|"") 
-            source $shell_config
-            ;;
-        *)
-            echo "Redémarrage annulé."
-            ;;
-    esac
+    echo -e "${COLOR_BLUE}⏭ Installation terminée !${COLOR_RESET}"
+    info_msg "Pour exécuter Termux Docker, saisissez : termux"
+    read -r -p "Appuyez sur n'importe quelle touche pour redémarrer..."
+    exec $SHELL -l
 }
 
 # Appel de la fonction principale
