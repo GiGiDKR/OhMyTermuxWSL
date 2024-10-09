@@ -28,7 +28,7 @@ redirect_output() {
 
 # Affiche un message d'information
 info_msg() {
-    local message="ℹ $1"
+    local message="ℹ  $1"
     if $USE_GUM; then
         gum style "$message" --foreground 33
     else
@@ -237,6 +237,11 @@ add_termux_alias() {
     echo "$shell_config"  # Retourne le chemin du fichier de configuration
 }
 
+# Télécharge l'image Docker de Termux
+download_termux_image() {
+    execute_command "sudo docker pull termux/termux-docker:latest" "Téléchargement de l'image Docker Termux"
+}
+
 # Traite les arguments de ligne de commande
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
@@ -279,13 +284,16 @@ main() {
     execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances"
 
     # Installation de Docker
-    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script d'installation Docker"
+    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script Docker"
     execute_command "sudo sh get-docker.sh" "Installation de Docker"
     execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe docker"
 
     # Configuration de Docker
-    check_and_start_docker
+    #check_and_start_docker
     execute_command "sudo service docker restart" "Redémarrage du service Docker"
+
+    # Téléchargement de l'image Termux
+    download_termux_image
 
     # Ajout des alias communs
     shell_config=$(add_common_alias)
