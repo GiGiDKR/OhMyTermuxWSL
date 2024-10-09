@@ -210,8 +210,6 @@ alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
     else
         info_msg "Les alias communs existent déjà dans $shell_config"
     fi
-
-    echo "$shell_config"  # Retourne le chemin du fichier de configuration
 }
 
 # Ajoute l'alias Termux au fichier de configuration du shell
@@ -233,8 +231,6 @@ add_termux_alias() {
     else
         info_msg "L'alias 'termux' existe déjà dans $shell_config"
     fi
-
-    echo "$shell_config"  # Retourne le chemin du fichier de configuration
 }
 
 # Télécharge l'image Docker de Termux
@@ -278,6 +274,9 @@ main() {
     # Affichage du banner
     show_banner
 
+    # Vérification des droits root
+    sudo -v
+
     # Installation des dépendances
     execute_command "sudo apt update -y" "Mise à jour des paquets"
     execute_command "sudo apt upgrade -y" "Mise à niveau des paquets"
@@ -301,9 +300,19 @@ main() {
     # Ajout de l'alias Termux au fichier de configuration du shell
     shell_config=$(add_termux_alias)
 
-    info_msg "Les modifications ont été appliquées à $shell_config."
-    info_msg "Pour qu'elles prennent effet, redémarrez le terminal ou exécutez :"
+    info_msg "Modifications appliquées !"
+    info_msg "Redémarrez le terminal ou exécutez :"
     info_msg "source $shell_config"
+    echo
+    read -r -p "Redémarrer maintenant ? [o/N] " response
+    case "$response" in
+        [oO][uUiI]*|"") 
+            source $shell_config
+            ;;
+        *)
+            echo "Redémarrage annulé."
+            ;;
+    esac
 }
 
 # Appel de la fonction principale
