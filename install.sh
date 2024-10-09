@@ -171,6 +171,31 @@ add_termux_alias() {
     echo "$shell_config"  # Retourne le chemin du fichier de configuration
 }
 
+# Traite les arguments de ligne de commande
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --full)
+                FULL_INSTALL=true
+                ;;
+            --update-omz)
+                UPDATE_OH_MY_ZSH=true
+                ;;
+            --verbose)
+                VERBOSE=true
+                ;;
+            --use-gum)
+                USE_GUM=true
+                ;;
+            *)
+                error_msg "Option non reconnue : $1"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
 # --- Fonction principale ---
 main() {
     # Traitement des arguments
