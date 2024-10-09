@@ -175,16 +175,16 @@ add_termux_alias() {
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --full)
+            --full|-f)
                 FULL_INSTALL=true
                 ;;
-            --update-omz)
+            --update-omz|-u)
                 UPDATE_OH_MY_ZSH=true
                 ;;
-            --verbose)
+            --verbose|-v)
                 VERBOSE=true
                 ;;
-            --use-gum)
+            --gum|-g)
                 USE_GUM=true
                 ;;
             *)
