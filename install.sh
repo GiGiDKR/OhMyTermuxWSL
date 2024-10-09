@@ -6,6 +6,7 @@ FULL_INSTALL=false
 UPDATE_OH_MY_ZSH=false
 VERBOSE=false
 LOG_FILE="$HOME/omtwsl.log"
+# Supprimé : TIMEOUT_DURATION=60 # Timeout par défaut en secondes
 
 # --- Couleurs ---
 COLOR_BLUE="\e[38;5;33m"
@@ -16,55 +17,70 @@ COLOR_RESET="\e[0m"
 
 # --- Fonctions ---
 
-log_message() {
-    local level="$1"
-    local message="$2"
-    local color=""
-    local symbol=""
-
-    case "$level" in
-        "INFO") color="$COLOR_BLUE"; symbol="ℹ" ;;
-        "SUCCESS") color="$COLOR_GREEN"; symbol="✓" ;;
-        "ERROR") color="$COLOR_RED"; symbol="✗" ;;
-    esac
-
-    echo -e "${color}${symbol} $message${COLOR_RESET}"
-    install_log "$level: $message"
+# Affiche un message d'information
+info_msg() {
+    local message="$1"
+    echo -e "${COLOR_BLUE}$message${COLOR_RESET}"
+    install_log "$message"
 }
 
+# Affiche un message de succès
+success_msg() {
+    local message="$1"
+    echo -e "${COLOR_GREEN}✓ $message${COLOR_RESET}"
+    install_log "$message"
+}
+
+# Affiche un message d'erreur
+error_msg() {
+    local message="$1"
+    echo -e "${COLOR_RED}✗ $message${COLOR_RESET}"
+    install_log "$message"
+}
+
+# Journalise un message
 install_log() {
     local message="$1"
     local timestamp=$(date +"%d.%m.%Y %H:%M:%S")
     echo "$timestamp - $message" >> "$LOG_FILE"
 }
 
-check_and_install_gum() {
+# Vérifie si gum est installé et propose de l'installer
+check_gum() {
     if $USE_GUM && ! command -v gum &> /dev/null; then
-        if confirm "gum est requis mais non installé. Voulez-vous l'installer ?"; then
-            install_gum
-        else
-            log_message "INFO" "gum non installé. Certaines fonctionnalités seront désactivées."
-            USE_GUM=false
-        fi
+        read -r -p "gum est requis mais non installé. Voulez-vous l'installer ? [O/n] " response
+        case "$response" in
+            [oO][uUiI]*|"") 
+                install_gum
+                ;;
+            *)
+                echo "gum non installé. Certaines fonctionnalités seront désactivées."
+                USE_GUM=false
+                ;;
+        esac
     fi
 }
 
+# Installe gum
 install_gum() {
-    log_message "INFO" "Installation de gum..."
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-    sudo chmod 644 /etc/apt/keyrings/charm.gpg /etc/apt/sources.list.d/charm.list
-    if sudo apt update -y && sudo apt install -y gum; then
-        log_message "SUCCESS" "gum installé avec succès."
+    info_msg "Installation de gum..."
+    sudo mkdir -p /etc/apt/keyrings > /dev/null 2>&1
+    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg > /dev/null 2>&1
+    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
+    sudo chmod 644 /etc/apt/keyrings/charm.gpg /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
+    sudo apt update -y > /dev/null 2>&1 && sudo apt install -y gum > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        success_msg "gum installé avec succès."
     else
-        log_message "ERROR" "Erreur lors de l'installation de gum."
+        error_msg "Erreur lors de l'installation de gum."
     fi
 }
 
+# Affiche le banner
 show_banner() {
     clear
     if $USE_GUM; then
+        # Afficher le banner avec gum
         gum style \
             --foreground 33 \
             --border-foreground 33 \
@@ -74,55 +90,65 @@ show_banner() {
             --margin "1 1 1 0" \
             "" "OHMYTERMUXWSL" ""
     else
+        # Afficher le banner en mode texte
         echo -e "\e[38;5;33m
 ╔══════════════════════════════════╗
-║                                  ║
-║           OHMYTERMUXWSL          ║
-║                                  ║
+║                                     ║
+║             OHMYTERMUXWSL           ║
+║                                     ║
 ╚══════════════════════════════════╝\e[0m"
     fi
 }
 
+# Vérifie les permissions sudo
 check_sudo_permissions() {
     if ! sudo -v; then
-        log_message "ERROR" "Permissions sudo requises. Veuillez exécuter le script avec sudo."
+        error_msg "Permissions sudo requises. Veuillez exécuter le script avec sudo."
         exit 1
     fi
 }
 
+# Exécute une commande et affiche le résultat
 execute_command() {
     local command="$1"
     local message="$2"
 
-    log_message "INFO" "$message..."
+    info_msg "$message..."
     if bash -c "$command" > /dev/null 2>&1; then
-        log_message "SUCCESS" "$message"
+        success_msg "$message"
     else
-        log_message "ERROR" "$message"
+        error_msg "$message"
         return 1
     fi
 }
 
+# Vérifie si on est dans WSL
 is_wsl() {
-    [ -f /proc/version ] && grep -qi microsoft /proc/version
+    if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+        return 0
+    else
+        return 1
+    fi
 }
 
+# Vérifie et démarre Docker
 check_and_start_docker() {
     if is_wsl; then
         if ! sudo service docker status > /dev/null 2>&1; then
-            execute_command "sudo service docker start" "Démarrage du service Docker"
+            execute_command "sudo service docker start" "Démarrage du service Docker" 30
         else
-            log_message "INFO" "Le service Docker est déjà en cours d'exécution."
+            info_msg "Le service Docker est déjà en cours d'exécution."
         fi
     else
         if ! systemctl is-active --quiet docker; then
-            execute_command "sudo systemctl start docker" "Démarrage du service Docker"
+            execute_command "sudo systemctl start docker" "Démarrage du service Docker" 30
         else
-            log_message "INFO" "Le service Docker est déjà en cours d'exécution."
+            info_msg "Le service Docker est déjà en cours d'exécution."
         fi
     fi
 }
 
+# Ajoute l'alias Termux au fichier de configuration du shell
 add_termux_alias() {
     local shell_config=""
     if [ -n "$ZSH_VERSION" ]; then
@@ -130,86 +156,64 @@ add_termux_alias() {
     elif [ -n "$BASH_VERSION" ]; then
         shell_config="$HOME/.bashrc"
     else
-        log_message "ERROR" "Shell non pris en charge pour l'ajout de l'alias."
+        error_msg "Shell non pris en charge pour l'ajout de l'alias."
         return 1
     fi
 
     if ! grep -q "alias termux=" "$shell_config"; then
         echo "alias termux='sudo docker run -it --rm termux/termux-docker /bin/bash'" >> "$shell_config"
         echo "echo \"Pour lancer Termux Docker, exécutez la commande 'termux'\"" >> "$shell_config"
-        log_message "SUCCESS" "Alias 'termux' ajouté à $shell_config"
+        success_msg "Alias 'termux' ajouté à $shell_config"
     else
-        log_message "INFO" "L'alias 'termux' existe déjà dans $shell_config"
+        info_msg "L'alias 'termux' existe déjà dans $shell_config"
     fi
 
-    echo "$shell_config"
+    echo "$shell_config"  # Retourne le chemin du fichier de configuration
 }
 
-confirm() {
-    local message="$1"
-    if $USE_GUM; then
-        gum confirm "$message"
-    else
-        read -r -p "$message [O/n] " response
-        case "$response" in
-            [oO][uUiI]*|"") return 0 ;;
-            *) return 1 ;;
-        esac
-    fi
-}
-
-# --- Script principal ---
-
-parse_arguments() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --gum|-g) USE_GUM=true ;;
-            --full|-f) FULL_INSTALL=true ;;
-            --update|-u) UPDATE_OH_MY_ZSH=true ;;
-            --verbose|-v) VERBOSE=true ;;
-            *) echo "Option non reconnue : $1" ;;
-        esac
-        shift
-    done
-}
-
+# --- Fonction principale ---
 main() {
+    # Traitement des arguments
     parse_arguments "$@"
-    check_and_install_gum
+
+    # Vérification de gum
+    check_gum
+
+    # Vérification des permissions sudo
     check_sudo_permissions
+
+    # Affichage du banner
     show_banner
 
+    # Installation des dépendances
     execute_command "sudo apt update -y" "Mise à jour des paquets"
     execute_command "sudo apt upgrade -y" "Mise à niveau des paquets"
     execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances"
 
-    execute_command "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg" "Ajout de la clé GPG Docker"
-    execute_command "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null" "Ajout du dépôt Docker"
-    execute_command "sudo apt update" "Mise à jour des dépôts"
+    # Installation de Docker
+    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script d'installation Docker"
+    execute_command "sudo sh get-docker.sh" "Installation de Docker"
+    execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe docker"
 
-    if is_wsl; then
-        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL"
-    else
-        execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker"
-        execute_command "sudo systemctl enable docker" "Activation du service Docker"
-    fi
-
+    # Configuration de Docker
     check_and_start_docker
-    execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur au groupe Docker"
     execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
+    # Ajout de l'alias Termux au fichier de configuration du shell
     shell_config=$(add_termux_alias)
 
-    log_message "SUCCESS" "Installation terminée avec succès."
-    log_message "INFO" "L'alias 'termux' a été ajouté à votre configuration shell."
+    # Fin du script
+    success_msg "Installation terminée avec succès."
+    info_msg "L'alias 'termux' a été ajouté à votre configuration shell."
 
     if [ -n "$shell_config" ]; then
-        log_message "INFO" "Application des modifications..."
+        info_msg "Application des modifications..."
         eval "source $shell_config"
-        log_message "SUCCESS" "Les modifications ont été appliquées. Vous pouvez maintenant utiliser la commande 'termux'."
+        success_msg "Les modifications ont été appliquées. Vous pouvez maintenant utiliser la commande 'termux'."
     else
-        log_message "ERROR" "Impossible d'appliquer les modifications. Veuillez redémarrer votre terminal."
+        error_msg "Impossible d'appliquer les modifications. Veuillez redémarrer votre terminal."
     fi
 }
 
+# Appel de la fonction principale
 main "$@"
