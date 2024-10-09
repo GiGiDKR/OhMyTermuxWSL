@@ -16,17 +16,19 @@ COLOR_YELLOW="\e[38;5;208m"
 COLOR_RESET="\e[0m"
 
 # --- Redirection ---
-if [ "$VERBOSE" = false ]; then
-    redirect="> /dev/null 2>&1"
-else
-    redirect=""
-fi
+redirect_output() {
+    if [ "$VERBOSE" = false ]; then
+        "$@" > /dev/null 2>&1
+    else
+        "$@"
+    fi
+}
 
 # --- Fonctions ---
 
 # Affiche un message d'information
 info_msg() {
-    local message="ⓘ $1"
+    local message="ℹ $1"
     if $USE_GUM; then
         gum style "$message" --foreground 33
     else
@@ -36,15 +38,15 @@ info_msg() {
 
 # Affiche un message de succès
 success_msg() {
-    local message="$1"
-    echo -e "${COLOR_GREEN}✓ $message${COLOR_RESET}"
+    local message="✔ $1"
+    echo -e "${COLOR_GREEN}$message${COLOR_RESET}"
     install_log "$message"
 }
 
 # Affiche un message d'erreur
 error_msg() {
-    local message="$1"
-    echo -e "${COLOR_RED}✗ $message${COLOR_RESET}"
+    local message="✗ $1"
+    echo -e "${COLOR_RED}$message${COLOR_RESET}"
     install_log "$message"
 }
 
@@ -110,23 +112,15 @@ show_banner() {
     fi
 }
 
-# Vérifie les permissions sudo
-check_sudo_permissions() {
-    if ! sudo -v; then
-        error_msg "Permissions sudo requises. Veuillez exécuter le script avec sudo."
-        exit 1
-    fi
-}
-
 # Fonction pour exécuter une commande et afficher le résultat
 execute_command() {
     local command="$1"
-    local info_msg="ⓘ $2"
-    local success_msg="✓ $2"
-    local error_msg="✗ $2"
+    local info_msg="$2"
+    local success_msg="$2"
+    local error_msg="$2"
 
     if $USE_GUM; then
-        if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "$command $redirect"; then
+        if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "redirect_output $command"; then
             gum style "$success_msg" --foreground 82
         else
             gum style "$error_msg" --foreground 196
@@ -135,7 +129,7 @@ execute_command() {
         fi
     else
         info_msg "$2"
-        if eval "$command $redirect"; then
+        if redirect_output $command; then
             tput cuu1
             tput el
             success_msg "$success_msg"
@@ -175,6 +169,51 @@ check_and_start_docker() {
     fi
 }
 
+# Ajoute des alias communs au fichier de configuration du shell
+add_common_alias() {
+    local shell_config=""
+    if [ -n "$ZSH_VERSION" ]; then
+        shell_config="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        shell_config="$HOME/.bashrc"
+    else
+        error_msg "Shell non pris en charge pour l'ajout des alias communs."
+        return 1
+    fi
+
+    local common_aliases="
+# Common aliases
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias h='history'
+alias q='exit'
+alias c='clear'
+alias md='mkdir'
+alias rm='rm -rf'
+alias s='source'
+alias n='nano'
+alias bashrc='nano \$HOME/.bashrc'
+alias zshrc='nano \$HOME/.zshrc'
+alias cm='chmod +x'
+alias g='git'
+alias gc='git clone'
+alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
+
+"
+
+    if ! grep -q "# Common aliases" "$shell_config"; then
+        echo -e "\n$common_aliases" >> "$shell_config"
+        success_msg "Alias communs ajoutés à $shell_config"
+    else
+        info_msg "Les alias communs existent déjà dans $shell_config"
+    fi
+
+    echo "$shell_config"  # Retourne le chemin du fichier de configuration
+}
+
 # Ajoute l'alias Termux au fichier de configuration du shell
 add_termux_alias() {
     local shell_config=""
@@ -189,8 +228,8 @@ add_termux_alias() {
 
     if ! grep -q "alias termux=" "$shell_config"; then
         echo "alias termux='sudo docker run -it --rm termux/termux-docker /bin/bash'" >> "$shell_config"
-        echo "echo \"Pour lancer Termux Docker, exécutez la commande 'termux'\"" >> "$shell_config"
         success_msg "Alias 'termux' ajouté à $shell_config"
+        info_msg "Pour lancer Termux Docker, saisissez : termux"
     else
         info_msg "L'alias 'termux' existe déjà dans $shell_config"
     fi
@@ -231,9 +270,6 @@ main() {
     # Vérification de gum
     check_gum
 
-    # Vérification des permissions sudo
-    check_sudo_permissions
-
     # Affichage du banner
     show_banner
 
@@ -251,20 +287,18 @@ main() {
     check_and_start_docker
     execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
+    # Ajout des alias communs
+    shell_config=$(add_common_alias)
+
     # Ajout de l'alias Termux au fichier de configuration du shell
     shell_config=$(add_termux_alias)
 
-    # Fin du script
-    success_msg "Installation terminée avec succès."
-    info_msg "L'alias 'termux' a été ajouté à votre configuration shell."
-
+    # Modifie la partie finale
     if [ -n "$shell_config" ] && [ -f "$shell_config" ]; then
-        info_msg "Application des modifications..."
-        if source "$shell_config" 2>/dev/null; then
-            success_msg "Les modifications ont été appliquées. Vous pouvez maintenant utiliser la commande 'termux'."
-        else
-            error_msg "Impossible d'appliquer les modifications. Veuillez redémarrer votre terminal."
-        fi
+        info_msg "Les modifications ont été appliquées à $shell_config."
+        info_msg "Pour qu'elles prennent effet, redémarrez le terminal ou exécutez :"
+        info_msg "source $shell_config"
+
     else
         error_msg "Fichier de configuration du shell non trouvé ou inaccessible."
     fi
