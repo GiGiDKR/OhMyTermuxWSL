@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Set TERM if not already defined
+# Définir TERM s'il n'est pas déjà défini
 [ -z "$TERM" ] && export TERM=xterm
 
 # --- Configuration ---
@@ -10,7 +10,7 @@ UPDATE_OH_MY_ZSH=false
 VERBOSE=false
 LOG_FILE="$HOME/omtwsl.log"
 
-# --- Colors ---
+# --- Couleurs ---
 COLOR_BLUE="\e[38;5;33m"
 COLOR_RED="\e[38;5;196m"
 COLOR_GREEN="\e[38;5;82m"
@@ -26,9 +26,9 @@ redirect_output() {
     fi
 }
 
-# --- Functions ---
+# --- Fonctions ---
 
-# Display an information message
+# Affiche un message d'information
 info_msg() {
     local message="ℹ  $1"
     if $USE_GUM; then
@@ -38,63 +38,63 @@ info_msg() {
     fi
 }
 
-# Display a success message
+# Affiche un message de succès
 success_msg() {
     local message="✔ $1"
     echo -e "${COLOR_GREEN}$message${COLOR_RESET}"
     install_log "$message"
 }
 
-# Display an error message
+# Affiche un message d'erreur
 error_msg() {
     local message="✗ $1"
     echo -e "${COLOR_RED}$message${COLOR_RESET}"
     install_log "$message"
 }
 
-# Log a message
+# Journalise un message
 install_log() {
     local message="$1"
     local timestamp=$(date +"%d.%m.%Y %H:%M:%S")
     echo "$timestamp - $message" >> "$LOG_FILE"
 }
 
-# Check if gum is installed and offer to install it
+# Vérifie si gum est installé et propose de l'installer
 check_gum() {
     if $USE_GUM && ! command -v gum &> /dev/null; then
-        read -r -p "gum is required but not installed. Do you want to install it? [Y/n] " response
+        read -r -p "gum est requis mais non installé. Voulez-vous l'installer ? [O/n] " response
         case "$response" in
-            [yY][eE][sS]|[yY]|"") 
+            [oO][uUiI]*|"") 
                 install_gum
                 ;;
             *)
-                echo "gum not installed. Some features will be disabled."
+                echo "gum non installé. Certaines fonctionnalités seront désactivées."
                 USE_GUM=false
                 ;;
         esac
     fi
 }
 
-# Install gum
+# Installe gum
 install_gum() {
-    info_msg "Installing gum..."
+    info_msg "Installation de gum..."
     sudo mkdir -p /etc/apt/keyrings > /dev/null 2>&1
     curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg > /dev/null 2>&1
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
     sudo chmod 644 /etc/apt/keyrings/charm.gpg /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
     sudo apt update -y > /dev/null 2>&1 && sudo apt install -y gum > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        success_msg "gum installed successfully."
+        success_msg "gum installé avec succès."
     else
-        error_msg "Error installing gum."
+        error_msg "Erreur lors de l'installation de gum."
     fi
 }
 
-# Display the banner
+# Affiche le banner
 show_banner() {
     clear
     if $USE_GUM; then
-        # Display banner with gum
+        # Afficher le banner avec gum
         gum style \
             --foreground 33 \
             --border-foreground 33 \
@@ -104,7 +104,7 @@ show_banner() {
             --margin "1 1 1 0" \
             "" "OHMYTERMUXWSL" ""
     else
-        # Display banner in text mode
+        # Afficher le banner en mode texte
         echo -e "\e[38;5;33m
 ╔══════════════════════════════════╗
 ║                                  ║
@@ -114,7 +114,7 @@ show_banner() {
     fi
 }
 
-# Function to execute a command and display the result
+# Fonction pour exécuter une commande et afficher le résultat
 execute_command() {
     local command=" $1"
     local info_msg=" $2"
@@ -126,7 +126,7 @@ execute_command() {
             gum style "$success_msg" --foreground 82
         else
             gum style "$error_msg" --foreground 196
-            install_log "Error executing command: $command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     else
@@ -139,13 +139,13 @@ execute_command() {
             tput cuu1
             tput el
             error_msg "$error_msg"
-            install_log "Error executing command: $command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     fi
 }
 
-# Check if we're in WSL
+# Vérifie si on est dans WSL
 is_wsl() {
     if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
         return 0
@@ -154,7 +154,7 @@ is_wsl() {
     fi
 }
 
-# Add common aliases to the shell configuration file
+# Ajoute des alias communs au fichier de configuration du shell
 add_common_alias() {
     local shell_config=""
     if [ -n "$ZSH_VERSION" ]; then
@@ -162,7 +162,7 @@ add_common_alias() {
     elif [ -n "$BASH_VERSION" ]; then
         shell_config="$HOME/.bashrc"
     else
-        error_msg "Unsupported shell for adding common aliases."
+        error_msg "Shell non pris en charge pour l'ajout des alias communs."
         return 1
     fi
 
@@ -194,7 +194,7 @@ alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
     fi
 }
 
-# Add Termux alias to the shell configuration file
+# Ajoute l'alias Termux au fichier de configuration du shell
 add_termux_alias() {
     local shell_config=""
     if [ -n "$ZSH_VERSION" ]; then
@@ -202,7 +202,7 @@ add_termux_alias() {
     elif [ -n "$BASH_VERSION" ]; then
         shell_config="$HOME/.bashrc"
     else
-        error_msg "Unsupported shell for adding alias."
+        error_msg "Shell non pris en charge pour l'ajout de l'alias."
         return 1
     fi
 
@@ -211,12 +211,12 @@ add_termux_alias() {
     fi
 }
 
-# Download Termux Docker image
+# Télécharge l'image Docker de Termux
 download_termux_image() {
-    execute_command "sudo docker pull termux/termux-docker:latest" "Downloading Termux Docker image"
+    execute_command "sudo docker pull termux/termux-docker:latest" "Téléchargement de l'image Docker Termux"
 }
 
-# Process command line arguments
+# Traite les arguments de ligne de commande
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -227,7 +227,7 @@ parse_arguments() {
                 USE_GUM=true
                 ;;
             *)
-                error_msg "Unrecognized option: $1"
+                error_msg "Option non reconnue : $1"
                 exit 1
                 ;;
         esac
@@ -235,65 +235,65 @@ parse_arguments() {
     done
 }
 
-# Function to configure TERM in the shell configuration file
+# Fonction pour configurer TERM dans le fichier de configuration du shell
 configure_term() {
     local shell_rc="$HOME/.bashrc"
     [ -f "$HOME/.zshrc" ] && shell_rc="$HOME/.zshrc"
 
     if ! grep -q "export TERM=xterm" "$shell_rc"; then
-        execute_command "echo 'export TERM=xterm' >> $shell_rc" "Exporting TERM variable"
+        execute_command "echo 'export TERM=xterm' >> $shell_rc" "Exportation de la variable TERM"
     fi
 }
 
-# --- Main function ---
+# --- Fonction principale ---
 main() {
-    # Process arguments
+    # Traitement des arguments
     parse_arguments "$@"
 
-    # Check for gum
+    # Vérification de gum
     check_gum
 
-    # Check for root rights
+    # Vérification des droits root
     sudo -v
 
-    # Display banner
+    # Affichage du banner
     show_banner
 
-    # Install dependencies
-    execute_command "sudo apt update -y" "Updating packages"
-    execute_command "sudo apt upgrade -y" "Upgrading packages"
-    execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installing dependencies"
+    # Installation des dépendances
+    execute_command "sudo apt update -y" "Mise à jour des paquets"
+    execute_command "sudo apt upgrade -y" "Mise à niveau des paquets"
+    execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances"
 
-    # Install Docker
-    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Downloading Docker script"
-    execute_command "sudo sh get-docker.sh" "Installing Docker"
-    execute_command "sudo usermod -aG docker $USER" "Granting necessary permissions"
+    # Installation de Docker
+    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script Docker"
+    execute_command "sudo sh get-docker.sh" "Installation de Docker"
+    execute_command "sudo usermod -aG docker $USER" "Attribution des droits nécessaires"
 
-    # Configure Docker
-    execute_command "sudo service docker restart" "Restarting Docker service"
+    # Configuration de Docker
+    execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
-    # Download Termux image
+    # Téléchargement de l'image Termux
     download_termux_image
 
-    # Add common aliases
+    # Ajout des alias communs
     add_common_alias
 
-    # Add Termux alias to shell configuration file
+    # Ajout de l'alias Termux au fichier de configuration du shell
     add_termux_alias
 
-    # Configure TERM
+    # Configuration de TERM
     configure_term
 
-    # End message
+    # Message de fin
     echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
-    echo -e "${COLOR_YELLOW}⏭  Installation complete!${COLOR_RESET}"
-    info_msg "To start, type: ${COLOR_YELLOW}termux${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}⏭  Installation terminée !${COLOR_RESET}"
+    info_msg "Pour démarrer, saisir : ${COLOR_YELLOW}termux${COLOR_RESET}"
     echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
-    echo -e "${COLOR_BLUE}Press any key...${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}Appuyez sur n'importe quelle touche...${COLOR_RESET}"
     read -r -n 1 -s
     clear
     exec $SHELL -l
 }
 
-# Call the main function
+# Appel de la fonction principale
 main "$@"
