@@ -194,8 +194,8 @@ alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
     fi
 }
 
-# Ajoute l'alias Termux au fichier de configuration du shell
-add_termux_alias() {
+# Modification du fichier de configuration shell
+modify_shell_config() {
     local shell_config=""
     if [ -n "$ZSH_VERSION" ]; then
         shell_config="$HOME/.zshrc"
@@ -208,6 +208,9 @@ add_termux_alias() {
 
     if ! grep -q "alias termux=" "$shell_config"; then
         echo "alias termux='sudo docker run -it --rm termux/termux-docker /bin/bash'" >> "$shell_config"
+    fi
+    if ! grep -q "export TERM=xterm" "$shell_config"; then
+        echo 'export TERM=xterm' >> $shell_config
     fi
 }
 
@@ -233,16 +236,6 @@ parse_arguments() {
         esac
         shift
     done
-}
-
-# Fonction pour configurer TERM dans le fichier de configuration du shell
-configure_term() {
-    local shell_rc="$HOME/.bashrc"
-    [ -f "$HOME/.zshrc" ] && shell_rc="$HOME/.zshrc"
-
-    if ! grep -q "export TERM=xterm" "$shell_rc"; then
-        execute_command "echo 'export TERM=xterm' >> $shell_rc" "Exportation de la variable TERM"
-    fi
 }
 
 # --- Fonction principale ---
@@ -278,11 +271,8 @@ main() {
     # Ajout des alias communs
     add_common_alias
 
-    # Ajout de l'alias Termux au fichier de configuration du shell
-    add_termux_alias
-
-    # Configuration de TERM
-    configure_term
+    # Modification du fichier de configuration shell
+    modify_shell_config
 
     # Message de fin
     echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
