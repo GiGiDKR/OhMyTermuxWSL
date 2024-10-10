@@ -16,7 +16,7 @@ Once logged into inux distro, paste the code :
 curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/1.0.0/install.sh -o install.sh && chmod +x install.sh && ./install.sh
 ```
 
-> [!INFO]
+> [!NOTE]
 > French version of the script is available :
 > ```bash
 > curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/dev/install-fr.sh -o install.sh && chmod +x install.sh && ./install.sh
