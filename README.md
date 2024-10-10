@@ -4,8 +4,8 @@ A [Docker](https://www.docker.com/) installation script in [WSL2](https://learn.
 
 ## Prerequisites
 
-- Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/about)
-- Install Linux distro (ex: Ubuntu) :
+- Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install-manual)
+- Install Linux distribution (ex: Ubuntu) :
 ```bash
 wsl --install
 ```
