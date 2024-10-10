@@ -270,12 +270,11 @@ main() {
     add_termux_alias
 
     # Message de fin
-    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
-    echo -e "${COLOR_BLUE}⏭  Installation terminée !${COLOR_RESET}"
-    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
-    info_msg "Pour exécuter Termux, saisir : ${COLOR_GREEN}termux${COLOR_RESET}"
-    echo -e "${COLOR_BLUE}═══════════════════════════════════${COLOR_RESET}"
-    echo -e "${COLOR_BLUE}Appuyez sur n'importe quelle touche pour redémarrer...${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}⏭  Installation terminée !${COLOR_RESET}"
+    info_msg "Pour démarrer, saisir : ${COLOR_YELLOW}termux${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}Appuyez sur n'importe quelle touche...${COLOR_RESET}"
     read -r -n 1 -s
     clear
     exec $SHELL -l
