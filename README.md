@@ -11,5 +11,5 @@ wsl --install
 ```
 Once logged into Ubuntu, paste the code :
 ```bash
-curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/main/install.sh -o install.sh && chmod +x install.sh && ./install.sh
+curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/1.0.0/install.sh -o install.sh && chmod +x install.sh && ./install.sh
 ```
