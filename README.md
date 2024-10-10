@@ -1,6 +1,6 @@
 # OhMyTermuxWSL
 
-[!]
+![Logo of OhMyTermuxWSL](logo.jpg)
 
 A [Docker](https://www.docker.com/) installation script in [WSL2](https://learn.microsoft.com/en-us/windows/wsl/about) that runs [Termux ](https://termux.dev/en/).
 
@@ -18,7 +18,6 @@ curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/1.0.
 
 > [!WARNING]
 > Preview version (only for internal development) :
-> Fernch version :
 > ```bash
-> curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/dev/install-fr.sh -o install.sh && chmod +x install.sh && ./install.sh
+> curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/dev/install.sh -o install.sh && chmod +x install.sh && ./install.sh
 > ```
