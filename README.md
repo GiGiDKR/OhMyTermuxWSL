@@ -1,4 +1,4 @@
-![Logo of OhMyTermuxWSL](logo.jph)
+![Logo of OhMyTermuxWSL](logo.jpg)
 
 ## A [Docker](https://www.docker.com/) installation script in [WSL2](https://learn.microsoft.com/en-us/windows/wsl/about) that runs [Termux ](https://termux.dev/en/).
 
