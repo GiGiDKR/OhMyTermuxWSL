@@ -1,97 +1,98 @@
 #!/bin/bash
 
+# --- Configuration ---
 USE_GUM=false
 FULL_INSTALL=false
-VERBOSE=false
 UPDATE_OH_MY_ZSH=false
+VERBOSE=false
+LOG_FILE="$HOME/omtwsl.log"
+# Supprimé : TIMEOUT_DURATION=60 # Timeout par défaut en secondes
 
-# Couleurs en variables
+# --- Couleurs ---
 COLOR_BLUE="\e[38;5;33m"
 COLOR_RED="\e[38;5;196m"
+COLOR_GREEN="\e[38;5;82m"
+COLOR_YELLOW="\e[38;5;208m"
 COLOR_RESET="\e[0m"
 
-# Traitement des arguments en ligne de commande
-parse_arguments() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --gum|-g)
-                USE_GUM=true
-                ;;
-            --full|-f)
-                FULL_INSTALL=true
-                ;;
-            --update|-u)
-                UPDATE_OH_MY_ZSH=true
-                ;;
-            --verbose|-v)
-                VERBOSE=true
-                ;;
-            *)
-                echo "Option non reconnue : $1"
-                ;;
-        esac
-        shift
-    done
-}
-
-# Appel de la fonction parse_arguments avec tous les arguments passés au script
-parse_arguments "$@"
-
-# Configuration de la redirection
-if [ "$VERBOSE" = false ]; then
-    redirect="> /dev/null 2>&1"
-else
-    redirect=""
-fi
-
-# Variables de fichiers de configuration
-LOG_FILE="$HOME/omtwsl.log"
-
-# Fonction pour afficher le banner en mode basique
-bash_banner() {
-    clear
-    local BANNER="
-╔═════════════════════════════════════╗
-║                                     ║
-║             OHMYTERMUXWSL           ║
-║                                     ║
-╚═════════════════════════════════════╝"
-
-    echo -e "\e[38;5;33m${BANNER}$1\n\e[0m"
-}
-
-# Vérification des permissions sudo
-check_sudo_permissions() {
-    if ! sudo -v; then
-        echo -e "\e[38;5;196mPermissions sudo requises. Veuillez exécuter le script avec sudo.\e[0m"
-        exit 1
+# --- Redirection ---
+redirect_output() {
+    if [ "$VERBOSE" = false ]; then
+        "$@" > /dev/null 2>&1
+    else
+        "$@"
     fi
 }
 
-# Fonction pour installer gum
+# --- Fonctions ---
+
+# Affiche un message d'information
+info_msg() {
+    local message="ℹ  $1"
+    if $USE_GUM; then
+        gum style "$message" --foreground 33
+    else
+        echo -e "${COLOR_BLUE}$message${COLOR_RESET}"
+    fi
+}
+
+# Affiche un message de succès
+success_msg() {
+    local message="✔ $1"
+    echo -e "${COLOR_GREEN}$message${COLOR_RESET}"
+    install_log "$message"
+}
+
+# Affiche un message d'erreur
+error_msg() {
+    local message="✗ $1"
+    echo -e "${COLOR_RED}$message${COLOR_RESET}"
+    install_log "$message"
+}
+
+# Journalise un message
+install_log() {
+    local message="$1"
+    local timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+    echo "$timestamp - $message" >> "$LOG_FILE"
+}
+
+# Vérifie si gum est installé et propose de l'installer
+check_gum() {
+    if $USE_GUM && ! command -v gum &> /dev/null; then
+        read -r -p "gum est requis mais non installé. Voulez-vous l'installer ? [O/n] " response
+        case "$response" in
+            [oO][uUiI]*|"") 
+                install_gum
+                ;;
+            *)
+                echo "gum non installé. Certaines fonctionnalités seront désactivées."
+                USE_GUM=false
+                ;;
+        esac
+    fi
+}
+
+# Installe gum
 install_gum() {
-    bash_banner
-    echo -e "\e[38;5;33mInstallation de gum\e[0m"
+    info_msg "Installation de gum..."
     sudo mkdir -p /etc/apt/keyrings > /dev/null 2>&1
     curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg > /dev/null 2>&1
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
     sudo chmod 644 /etc/apt/keyrings/charm.gpg /etc/apt/sources.list.d/charm.list > /dev/null 2>&1
     sudo apt update -y > /dev/null 2>&1 && sudo apt install -y gum > /dev/null 2>&1
-}
-
-# Installation de gum si nécessaire
-install_gum_if_needed() {
-    if $USE_GUM; then
-        if ! command -v gum &> /dev/null; then
-            install_gum
-        fi
+    if [ $? -eq 0 ]; then
+        success_msg "gum installé avec succès."
+    else
+        error_msg "Erreur lors de l'installation de gum."
     fi
 }
 
-# Fonction pour afficher le banner
+# Affiche le banner
 show_banner() {
     clear
     if $USE_GUM; then
+        # Afficher le banner avec gum
         gum style \
             --foreground 33 \
             --border-foreground 33 \
@@ -101,123 +102,48 @@ show_banner() {
             --margin "1 1 1 0" \
             "" "OHMYTERMUXWSL" ""
     else
-        bash_banner
+        # Afficher le banner en mode texte
+        echo -e "\e[38;5;33m
+╔══════════════════════════════════╗
+║                                  ║
+║           OHMYTERMUXWSL          ║
+║                                  ║
+╚══════════════════════════════════╝\e[0m"
     fi
 }
 
-# Fonction pour journaliser les messages
-install_log() {
-    local message="$1"
-    local timestamp=$(date +"%d.%m.%Y %H:%M:%S")
-    local log_message="$timestamp - $message"
-
-    if [ ! -f "$LOG_FILE" ]; then
-        touch "$LOG_FILE"
-    fi
-
-    echo "$log_message" >> "$LOG_FILE"
-}
-
-# Fonction pour afficher des messages d'information en bleu
-info_msg() {
-    local message="$1"
-    if $USE_GUM; then
-        gum style "${message//$'\n'/ }" --foreground 33
-    else
-        echo -e "\e[38;5;33m$message\e[0m"
-    fi
-    install_log "$message"
-}
-
-# Fonction pour afficher des messages de succès en vert
-success_msg() {
-    local message="$1"
-    if $USE_GUM; then
-        gum style "${message//$'\n'/ }" --foreground 82
-    else
-        echo -e "\e[38;5;82m$message\e[0m"
-    fi
-    install_log "$message"
-}
-
-# Fonction pour afficher des messages d'erreur en rouge
-error_msg() {
-    local message="$1"
-    if $USE_GUM; then
-        gum style "${message//$'\n'/ }" --foreground 196
-    else
-        echo -e "\e[38;5;196m$message\e[0m"
-    fi
-    install_log "$message"
-}
-
-# Fonction pour journaliser les erreurs
-log_error() {
-    local error_msg="$1"
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERREUR: $error_msg" >> $LOG_FILE
-}
-
-# Fonction pour exécuter une commande avec un timeout et afficher le résultat
+# Fonction pour exécuter une commande et afficher le résultat
 execute_command() {
-    local command="$1"
-    local info_msg="$2"
-    local timeout_duration="${3:-60}"
-    local success_msg="✓ $info_msg"
-    local error_msg="✗ $info_msg"
-    local timeout_msg="⏱  $info_msg"
+    local command=" $1"
+    local info_msg=" $2"
+    local success_msg=" $2"
+    local error_msg=" $2"
 
     if $USE_GUM; then
-        if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "timeout $timeout_duration $command $redirect"; then
+        if gum spin --spinner.foreground="33" --title.foreground="33" --spinner dot --title "$info_msg" -- bash -c "redirect_output $command"; then
             gum style "$success_msg" --foreground 82
-        elif [ $? -eq 124 ]; then
-            gum style "$timeout_msg" --foreground 208
-            log_error "Timeout: $command"
-            return 1
         else
             gum style "$error_msg" --foreground 196
-            log_error "$command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     else
-        info_msg "$info_msg"
-        if eval "timeout $timeout_duration $command $redirect"; then
+        info_msg "$2"
+        if redirect_output $command; then
             tput cuu1
             tput el
             success_msg "$success_msg"
-        elif [ $? -eq 124 ]; then
-            tput cuu1
-            tput el
-            echo -e "\e[38;5;208m$timeout_msg\e[0m"
-            log_error "Timeout: $command"
-            return 1
         else
             tput cuu1
             tput el
             error_msg "$error_msg"
-            log_error "$command"
+            install_log "Erreur lors de l'exécution de la commande : $command"
             return 1
         fi
     fi
 }
 
-# Modification de la fonction check_and_start_docker
-check_and_start_docker() {
-    if is_wsl; then
-        if ! sudo service docker status > /dev/null 2>&1; then
-            execute_command "sudo service docker start" "Démarrage du service Docker" 30
-        else
-            info_msg "> Le service Docker est déjà en cours d'exécution"
-        fi
-    else
-        if ! systemctl is-active --quiet docker; then
-            execute_command "sudo systemctl start docker" "Démarrage du service Docker" 30
-        else
-            info_msg "> Le service Docker est déjà en cours d'exécution"
-        fi
-    fi
-}
-
-# Fonction pour vérifier si nous sommes dans WSL
+# Vérifie si on est dans WSL
 is_wsl() {
     if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
         return 0
@@ -226,80 +152,133 @@ is_wsl() {
     fi
 }
 
-check_sudo_permissions
-install_gum_if_needed
+# Ajoute des alias communs au fichier de configuration du shell
+add_common_alias() {
+    local shell_config=""
+    if [ -n "$ZSH_VERSION" ]; then
+        shell_config="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        shell_config="$HOME/.bashrc"
+    else
+        error_msg "Shell non pris en charge pour l'ajout des alias communs."
+        return 1
+    fi
 
-show_banner
+    local common_aliases="
+# Common aliases
 
-# Ajout de la vérification de la distribution
-if ! command -v lsb_release &> /dev/null; then
-    execute_command "sudo apt install -y lsb-release" "Installation de lsb-release"
-fi
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias h='history'
+alias q='exit'
+alias c='clear'
+alias md='mkdir'
+alias rm='rm -rf'
+alias s='source'
+alias n='nano'
+alias bashrc='nano \$HOME/.bashrc'
+alias zshrc='nano \$HOME/.zshrc'
+alias cm='chmod +x'
+alias g='git'
+alias gc='git clone'
+alias push='git pull && git add . && git commit -m \"mobile push\" && git push'
 
-execute_command "sudo apt update -y" "Recherche de mises à jour" 30
-execute_command "sudo apt upgrade -y" "Mise à jour des paquets"
-execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common" "Installation des dépendances" 240
+"
 
-# Modification de l'ajout de la clé GPG Docker
-execute_command "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -" "Ajout de la clé GPG Docker" 10
+    if ! grep -q "# Common aliases" "$shell_config"; then
+        echo -e "\n$common_aliases" >> "$shell_config"
+    fi
+}
 
-# Modification de l'ajout du dépôt Docker
-execute_command "echo \"deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null" "Ajout du dépôt Docker" 20
+# Ajoute l'alias Termux au fichier de configuration du shell
+add_termux_alias() {
+    local shell_config=""
+    if [ -n "$ZSH_VERSION" ]; then
+        shell_config="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        shell_config="$HOME/.bashrc"
+    else
+        error_msg "Shell non pris en charge pour l'ajout de l'alias."
+        return 1
+    fi
 
-# Mise à jour après l'ajout du dépôt
-execute_command "sudo apt update" "Mise à jour des dépôts" 30
+    if ! grep -q "alias termux=" "$shell_config"; then
+        echo "alias termux='sudo docker run -it --rm termux/termux-docker /bin/bash'" >> "$shell_config"
+    fi
+}
 
-if is_wsl; then
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker pour WSL" 120
-    check_and_start_docker
-else
-    execute_command "sudo apt install -y docker-ce docker-ce-cli containerd.io" "Installation de Docker" 120
-    execute_command "sudo systemctl enable docker" "Activation du service Docker" 10
-    check_and_start_docker
-fi
+# Télécharge l'image Docker de Termux
+download_termux_image() {
+    execute_command "sudo docker pull termux/termux-docker:latest" "Téléchargement de l'image Docker Termux"
+}
 
-execute_command "sudo usermod -aG docker $USER" "Ajout de l'utilisateur $USER au groupe Docker" 10
+# Traite les arguments de ligne de commande
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --verbose|-v)
+                VERBOSE=true
+                ;;
+            --gum|-g)
+                USE_GUM=true
+                ;;
+            *)
+                error_msg "Option non reconnue : $1"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
 
-#execute_command "sleep 10" "Pause de 10 secondes" 10
+# --- Fonction principale ---
+main() {
+    # Traitement des arguments
+    parse_arguments "$@"
 
-# Rechargement des groupes de l'utilisateur
-# newgrp docker
+    # Vérification de gum
+    check_gum
 
-# Détection du shell par défaut
-default_shell=$(basename "$SHELL")
+    # Vérification des droits root
+    sudo -v
 
-# Création de l'alias selon le shell par défaut
-case "$default_shell" in
-    bash)
-        config_file="$HOME/.bashrc"
-        ;;
-    zsh)
-        config_file="$HOME/.zshrc"
-        ;;
-    *)
-        error_msg "Shell non pris en charge : $default_shell"
-        exit 1
-        ;;
-esac
+    # Affichage du banner
+    show_banner
 
-# Ajout de l'alias au fichier de configuration
-echo "alias termux='docker run -it --rm termux/termux-docker /bin/bash'" >> "$config_file"
+    # Installation des dépendances
+    execute_command "sudo apt update -y" "Mise à jour des paquets"
+    execute_command "sudo apt upgrade -y" "Mise à niveau des paquets"
+    execute_command "sudo apt install -y apt-transport-https ca-certificates curl software-properties-common lsb-release" "Installation des dépendances"
 
-# Messages de fin
-success_msg "L'installation est terminée avec succès."
-info_msg "Un alias 'termux' a été ajouté à votre fichier $config_file"
+    # Installation de Docker
+    execute_command "curl -fsSL https://get.docker.com -o get-docker.sh" "Téléchargement du script Docker"
+    execute_command "sudo sh get-docker.sh" "Installation de Docker"
+    execute_command "sudo usermod -aG docker $USER" "Attribution des droits nécessaires"
 
-# Ajout d'une pause pour l'utilisateur
-read -p "Appuyez sur Entrée pour recharger la configuration du shell..."
+    # Configuration de Docker
+    execute_command "sudo service docker restart" "Redémarrage du service Docker"
 
-# Rechargement de la configuration du shell
-source "$config_file"
+    # Téléchargement de l'image Termux
+    download_termux_image
 
-# Redémarrage du service Docker
-if is_wsl; then
-    execute_command "sudo service docker restart" "Redémarrage du service Docker" 30
-else
-    execute_command "sudo systemctl restart docker" "Redémarrage du service Docker" 30
-fi
+    # Ajout des alias communs
+    add_common_alias
 
-info_msg "Utiliser la commande 'termux' pour lancer Termux Docker"
+    # Ajout de l'alias Termux au fichier de configuration du shell
+    add_termux_alias
+
+    # Message de fin
+    echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}⏭  Installation terminée !${COLOR_RESET}"
+    info_msg "Pour démarrer, saisir : ${COLOR_YELLOW}termux${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}════════════════════════════════════${COLOR_RESET}"
+    echo -e "${COLOR_BLUE}Appuyez sur n'importe quelle touche...${COLOR_RESET}"
+    read -r -n 1 -s
+    clear
+    exec $SHELL -l
+}
+
+# Appel de la fonction principale
+main "$@"
