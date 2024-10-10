@@ -18,6 +18,11 @@ curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/1.0.
 
 > [!WARNING]
 > Preview version (only for internal development) :
+> French version :
+> ```bash
+> curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/dev/install-fr.sh -o install.sh && chmod +x install.sh && ./install.sh
+> ```
+> English version :
 > ```bash
 > curl -sL https://raw.githubusercontent.com/GiGiDKR/OhMyTermuxWSL/refs/heads/dev/install.sh -o install.sh && chmod +x install.sh && ./install.sh
 > ```
